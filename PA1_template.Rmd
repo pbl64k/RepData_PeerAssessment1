@@ -83,3 +83,38 @@ median(steps.by.day.imputed)
 ```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r echo=T}
+activity$weekday <- as.factor(
+    sapply(activity$date,
+           function(x) {
+               if (weekdays(as.Date(x)) %in% c('Saturday', 'Sunday')) {
+                   'weekend'
+               } else {
+                   'weekday'
+               }
+           }))
+head(activity)
+tail(activity)
+```
+
+```{r echo=T}
+par(mfcol = c(2, 1))
+steps.by.interval.we <- with(activity[activity$weekday == 'weekend',],
+                             by(steps, interval, mean, na.rm = T))
+plot(names(steps.by.interval.we), steps.by.interval.we,
+     main = 'Averaged daily activity pattern\n(weekends)',
+     xlab = 'interval (minutes)',
+     ylab = 'average number of steps', pch = '.')
+lines(names(steps.by.interval.we), steps.by.interval.we, col = 'green')
+steps.by.interval.wd <- with(activity[activity$weekday == 'weekday',],
+                             by(steps, interval, mean, na.rm = T))
+plot(names(steps.by.interval.wd), steps.by.interval.wd,
+     main = 'Averaged daily activity pattern\n(weekdays)',
+     xlab = 'interval (minutes)',
+     ylab = 'average number of steps', pch = '.')
+lines(names(steps.by.interval.wd), steps.by.interval.wd, col = 'red')
+steps.by.interval.we
+steps.by.interval.wd
+```
+
