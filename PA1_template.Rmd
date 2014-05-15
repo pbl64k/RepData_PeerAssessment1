@@ -1,20 +1,85 @@
 # Reproducible Research: Peer Assessment 1
 
-
 ## Loading and preprocessing the data
 
+```{r echo=T}
+activity <- read.csv('./activity.csv')
+```
 
+```{r echo=T}
+activity$interval <- (activity$interval %/% 100) * 60 +
+    (activity$interval %% 100)
+```
+
+```{r echo=T}
+head(activity)
+tail(activity)
+```
 
 ## What is mean total number of steps taken per day?
 
+```{r echo=T}
+steps.by.day <- with(activity, by(steps, date, sum, na.rm = T))
+```
 
+```{r echo=T}
+hist(steps.by.day, col = 'blue', xlab = 'Number of steps per day',
+     main = 'Distribution of total number of steps per day')
+```
+
+```{r echo=T}
+mean(steps.by.day)
+median(steps.by.day)
+```
 
 ## What is the average daily activity pattern?
 
+```{r echo=T}
+steps.by.interval <- with(activity, by(steps, interval, mean, na.rm = T))
+```
 
+```{r echo=T}
+plot(names(steps.by.interval), steps.by.interval,
+     main = 'Averaged daily activity pattern', xlab = 'interval (minutes)',
+     ylab = 'average number of steps', pch = '.')
+lines(names(steps.by.interval), steps.by.interval, col = 'red')
+```
+
+```{r echo=T}
+max(steps.by.interval)
+which.max(steps.by.interval)
+```
 
 ## Imputing missing values
 
+```{r echo=T}
+sum(is.na(activity$steps))
+```
 
+```{r echo=T}
+na.indices <- which(is.na(activity$steps))
+activity.imputed <- activity
+for (ix in na.indices) {
+    activity.imputed[ix,]$steps <-
+        as.list(steps.by.interval)[[as.character(activity[ix,]$interval)]]
+}
+sum(is.na(activity.imputed$steps))
+```
+
+```{r echo=T}
+head(activity.imputed)
+steps.by.day.imputed <- with(activity.imputed, by(steps, date, sum))
+```
+
+```{r echo=T}
+hist(steps.by.day.imputed, col = 'blue', xlab = 'Number of steps per day',
+     main =
+         'Distribution of total number of steps per day\n(with imputed missing values)')
+```
+
+```{r echo=T}
+mean(steps.by.day.imputed)
+median(steps.by.day.imputed)
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
