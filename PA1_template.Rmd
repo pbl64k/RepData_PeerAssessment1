@@ -6,37 +6,52 @@
 activity <- read.csv('./activity.csv')
 ```
 
+After loading the data I will convert the `interval` variable to a more
+suitable format. The variable in the dataset is represented as hour times
+one hundred, plus the number of minutes, which makes for unnatural breaks in
+the data. I simply convert `interval` to the number of minutes since
+midnight.
+
 ```{r echo=T}
 activity$interval <- (activity$interval %/% 100) * 60 +
     (activity$interval %% 100)
 ```
 
-```{r echo=T}
-head(activity)
-tail(activity)
-```
-
 ## What is mean total number of steps taken per day?
+
+To compute daily step totals sensibly I need to drop missing values.
 
 ```{r echo=T}
 steps.by.day <- with(activity, by(steps, date, sum, na.rm = T))
 ```
+
+Here's the frequency distribution of daily step totals:
 
 ```{r echo=T}
 hist(steps.by.day, col = 'blue', xlab = 'Number of steps per day',
      main = 'Distribution of total number of steps per day')
 ```
 
+The mean and the median are easy to compute:
+
 ```{r echo=T}
 mean(steps.by.day)
 median(steps.by.day)
 ```
 
+So mean total number of steps per day is 9354, while median is 10395,
+indicating that the distribution is left-skewed, which is confirmed by the
+histogram.
+
 ## What is the average daily activity pattern?
+
+Once again, missing values need to be dropped to produce sensible aggregates.
 
 ```{r echo=T}
 steps.by.interval <- with(activity, by(steps, interval, mean, na.rm = T))
 ```
+
+The averaged daily activity pattern looks like this:
 
 ```{r echo=T}
 plot(names(steps.by.interval), steps.by.interval,
@@ -45,16 +60,27 @@ plot(names(steps.by.interval), steps.by.interval,
 lines(names(steps.by.interval), steps.by.interval, col = 'red')
 ```
 
+There's an easily identifiable peak, which can be found as follows:
+
 ```{r echo=T}
 max(steps.by.interval)
 which.max(steps.by.interval)
 ```
 
+So the maximum average number of steps in a five minute interval is 206.2,
+and the peak occurs 515 minutes after the midnight (which corresponds to
+8:35am).
+
 ## Imputing missing values
+
+The total number of missing values in the data set is:
 
 ```{r echo=T}
 sum(is.na(activity$steps))
 ```
+
+I will replace the missing values with averages for the corresponding time
+intervals.
 
 ```{r echo=T}
 na.indices <- which(is.na(activity$steps))
@@ -63,19 +89,22 @@ for (ix in na.indices) {
     activity.imputed[ix,]$steps <-
         as.list(steps.by.interval)[[as.character(activity[ix,]$interval)]]
 }
-sum(is.na(activity.imputed$steps))
 ```
 
+Here's how the total number of steps per day distribution looks after
+extrapolation. Notably, this looks much closer to normal.
+
 ```{r echo=T}
-head(activity.imputed)
 steps.by.day.imputed <- with(activity.imputed, by(steps, date, sum))
-```
-
-```{r echo=T}
 hist(steps.by.day.imputed, col = 'blue', xlab = 'Number of steps per day',
      main =
          'Distribution of total number of steps per day\n(with imputed missing values)')
 ```
+
+The mean and median of 10766 indicate that the skew arising due to missing
+values is gone. Of course, since I replaced the values that were treated,
+effectively, as zeroes with positive values, both the mean and the median are
+higher now.
 
 ```{r echo=T}
 mean(steps.by.day.imputed)
@@ -83,6 +112,8 @@ median(steps.by.day.imputed)
 ```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+After adding the indicator variable for weekdays/weekends to the dataset...
 
 ```{r echo=T}
 activity$weekday <- as.factor(
@@ -94,9 +125,10 @@ activity$weekday <- as.factor(
                    'weekday'
                }
            }))
-head(activity)
-tail(activity)
 ```
+
+...I can proceed with plotting separate average activity patterns for those
+two categories.
 
 ```{r echo=T}
 par(mfcol = c(2, 1))
@@ -114,7 +146,9 @@ plot(names(steps.by.interval.wd), steps.by.interval.wd,
      xlab = 'interval (minutes)',
      ylab = 'average number of steps', pch = '.')
 lines(names(steps.by.interval.wd), steps.by.interval.wd, col = 'red')
-steps.by.interval.we
-steps.by.interval.wd
 ```
 
+The pattern look a little different, with more, and more variable, activity
+on weekend. It seems that the entire plot is shifted to the right, as well,
+probably indicating the person waking up and going to sleep later during
+weekends.
